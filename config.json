@@ -1,0 +1,11 @@
+{
+  "ListenAddr": ":80",
+  "SaveFile": "save.json",
+  "Verbose": true,
+  "URLFilters": [
+    "\\.mesh/"
+  ],
+  "Seeds": [
+    "http://gitlab.mesh/"
+  ]
+}

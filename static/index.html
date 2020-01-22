@@ -1,0 +1,167 @@
+<html>
+<style>
+<style>
+body {
+  overflow-x: hidden;
+}
+.container {
+  height: 100%;
+  position: relative;
+  font-family: "Courier New", Courier, monospace;
+}
+.vertical-center {
+  margin: auto auto;
+  position: absolute;
+  top: 50%;
+  width: 100%;
+  -ms-transform: translateY(-50%);
+  transform: translateY(-50%);
+}
+.horizontal-center {
+  text-align: center;
+}
+#searchresult {
+  text-align: left !important;
+}
+#searchresult li {
+  margin: 15px;
+  display: block;
+  overflow: hidden;
+  max-height: 150px;
+}
+#searchresult li a {
+  text-decoration: none;
+  color: blue;
+}
+#searchresult li a span#link {
+  font-size: 0.8em;
+  color: green;
+}
+#searchresult li a span#attributes {
+  font-size: 0.7em;
+  color: black;
+}
+#searchresult li p {
+  font-size: 0.8em;
+  text-decoration: none;
+  display: block;
+  margin: 4px 0 0 0;
+}
+#logodiv {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 16px;
+}
+#logo {
+  width: 80px;
+  height: 80px;
+  margin-right: 16px;
+}
+#logotext {
+  font-family: helvetica neue, helvetica, sans-serif;
+  font-size: 2em;
+  font-weight: 800;
+  margin-left: 16px;
+}
+#statsbox {
+  font-size: 0.7em;
+  color: black;
+}
+</style>
+<script type="text/javascript">
+  var now = new Date()
+  window.onload = function() {
+    document.getElementById("searchform").addEventListener("submit", function(event) {
+      event.preventDefault()
+      var q = document.getElementById("searchquery").value;
+      fetch('/search?q=' + q).then((r) => {
+        return r.json();
+      })
+      .then((j) => {
+        rendersearchresults(j.hits)
+      })
+    })
+    fetch('/stats')
+    .then((r) => r.json())
+    .then((j) => {
+
+      document.getElementById("statsbox").innerHTML = `${j.DocCount} documents indexed. Over ${j.Index.searches} served.<br\>Running on ${j.Hostname}. Version: ${j.Version}`
+    })
+  }
+  function humanizetime(ms){
+  var floor = Math.floor
+    , secs  = floor(ms / 1000)
+    , mins  = floor(secs / 60)
+    , hrs   = floor(mins / 60)
+    , days  = floor(hrs / 24)
+
+  var buff = "Scraped "
+  if (days > 1){
+    buff = buff.concat(days + "days ago")
+  } else if (hrs > 0) {
+    buff = buff.concat(hrs + "hrs ago")
+  } else if (mins > 0) {
+    buff = buff.concat(mins % 60 + "min ago")
+  } else if (secs > 0) {
+    buff = buff.concat(secs % 60 + "sec ago ")
+  } else {
+    buff = "just now"
+  }
+  return buff
+}
+  function renderone(p) {
+    var r = "<li><a href=\"" + p.id + "\">"
+    console.log(p)
+    if(p.fields && p.fields.Title) {
+      r = r + p.fields.Title + "<br /><span id='link'>" + p.fields.URL + "</span>"
+    } else {
+      r = r + p.id
+    }
+
+    r = r + "<br /><span id='attributes'>"
+    if(p.fields && p.fields.Time) {
+      t = new Date(p.fields.Time*1000)
+      r = r + humanizetime(now - t.getTime()) + " "
+    }
+    if(p.score) {
+      r = r + " - Match Score " + p.score.toFixed(2)
+    }
+    r = r + "</span>"
+
+    r = r + "</a>"
+    if(p.fragments) {
+      r = r + "<br />"
+      if(p.fragments.Summary) {
+        r = r + "<p>" + p.fragments.Summary + "</p>"
+      } else {
+        r = r + "<p>" + Object.keys(p.fragments).map((x) => x + ": " + p.fragments[x] + " ").reduce((a, c) => a + c, "") + "</p>"
+      }
+    }
+    return r
+  }
+  function rendersearchresults(d) {
+    // var r = d.map((x) => "<li><a href=\"" + x.id + "\">" + x['fragments'].Title + "</a><br /><p>" + x['fragments'].Summary + "</p><p>" + JSON.stringify(x) + "</p></li>").reduce((a, c) => a + c, "")
+    var r = d.map((x) => renderone(x)).reduce((a, c) => a + c, "")
+    document.getElementById("searchresult").innerHTML = "<ul>" + r + "</ul>"
+  }
+</script>
+<body>
+  <div class="container">
+  <div class="vertical-center">
+    <div id="searchbox" class="horizontal-center">
+      <form id="searchform" action="/" method="GET">
+        <div id="logodiv">
+          <img src="logo.svg" id="logo"><span id="logotext">Mesh Search</span><br />
+        </div>
+        <label for="site-search">Search:</label>
+        <input required type="search" id="searchquery" name="q" aria-label="Search">
+        <button id="searchbutton">Search</button>
+      </form>
+      <span id="statsbox"></span>
+    </div>
+    <div id="searchresult"></div>
+  </div>
+</div>
+</body>
+</html>
